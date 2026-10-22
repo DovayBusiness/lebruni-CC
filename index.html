@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#123246">
   <title>Lebruni CostCalculator</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body data-theme="ocean">
   <div class="app-shell">
@@ -93,7 +93,7 @@
         <div class="notice"><span class="notice-icon">i</span><div><strong>Stored only in this browser</strong><span>These setup values will not transfer to another device until connected to Supabase. Use Backup & restore to keep a copy.</span></div><button class="notice-link" id="setupBackup">Backup values →</button></div>
         <div class="product-layout"><section class="panel product-list-panel"><div class="panel-heading"><div><h2>Your products</h2><p id="productCount">0 product setups</p></div></div><div id="productList" class="product-list"></div></section><section class="panel product-editor"><div class="panel-heading"><div><h2 id="editorTitle">Product configuration</h2><p>Set fixed product-specific values. Blank rates are treated as zero.</p></div><span class="step-chip">SETUP</span></div><div id="emptyEditor" class="empty-state"><div class="empty-icon">◈</div><strong>Select a product to edit</strong><p>Or add a product to create your first setup.</p><button class="button button-primary" id="emptyAddProduct">＋ Add product</button></div><form id="productForm" class="hidden" autocomplete="off">
           <input id="editProductId" type="hidden">
-          <div class="section-label">PRODUCT IDENTITY</div><div class="form-grid"><label class="field field-wide"><span>Product name <em>*</em></span><input id="pName" type="text" required placeholder="e.g. Soyabean to refined oil"></label><label class="field field-wide"><span>Calculation type</span><select id="pType"><option value="soy">Soybean to refined oil (70/30 allocation)</option><option value="imported">Imported crude oil to refined oil</option><option value="other">Other product (single-product costing)</option></select><small class="field-hint">The supplied code applies special joint-cost allocation to “Soyabean to refined oil”.</small></label></div>
+          <div class="section-label">PRODUCT IDENTITY</div><div class="form-grid"><label class="field field-wide"><span>Product name <em>*</em></span><input id="pName" type="text" required placeholder="e.g. Soyabean to refined oil"></label><label class="field field-wide"><span>Calculation type</span><select id="pType"><option value="soy">Soybean to refined oil (editable joint-cost allocation)</option><option value="imported">Imported crude oil to refined oil</option><option value="other">Other product (single-product costing)</option></select><small class="field-hint">The supplied code applies special joint-cost allocation to “Soyabean to refined oil”.</small></label></div>
           <div class="section-label">TAXES, CLEARING & YIELDS</div><div class="form-grid two">
             <label class="field"><span>Import duty</span><div class="input-unit"><input id="pImportDuty" type="number" step="0.0001" min="0"><small>%</small></div></label>
             <label class="field"><span>VAT on import duty</span><div class="input-unit"><input id="pVat" type="number" step="0.0001" min="0"><small>%</small></div></label>
@@ -150,7 +150,7 @@
           </div>
           <div class="section-label">COST CALCULATOR ITEMS</div><p class="field-hint legacy-help">Demo item-code mean costs are stored in this product setup for reference; the current calculation formulas do not add these rows into totals.</p>
           <div class="cost-item-header"><span>Item Code</span><span>Mean Cost Value</span><span>Action</span></div><div id="costItemsEditor" class="cost-items-editor"></div><button class="button button-secondary add-cost-item" type="button" id="addCostItem">＋ Add item</button>
-          <div id="allocationRulesSection"><div class="section-label">JOINT COST SHARING · NRV</div><p class="field-hint legacy-help">Each input’s NRV pool share plus direct share must total 100%. Direct additions go to refinery except meal packaging bags, which are fixed at 0% pool / 100% direct and remain assigned to soya meal.</p><div class="allocation-rule-head"><span>Input</span><span>NRV pool %</span><span>Direct share %</span></div><div id="allocationRulesEditor" class="allocation-rules-editor"></div></div>
+          <div id="allocationRulesPanel"><div class="section-label">JOINT COST SHARING · NRV</div><p class="field-hint legacy-help">Each input’s NRV pool share plus direct share must total 100%. Direct additions go to refinery except meal packaging bags, which remain assigned to soya meal.</p><div class="allocation-rule-head"><span>Input</span><span>NRV pool %</span><span>Direct share %</span></div><div id="allocationRulesEditor" class="allocation-rules-editor"></div></div>
           <div class="editor-actions"><button class="button button-danger" type="button" id="deleteProduct">Delete product</button><div><button class="button button-secondary" type="button" id="resetProduct">Cancel</button><button class="button button-primary" type="submit">Save product setup</button></div></div>
         </form></section></div>
       </section>
@@ -163,6 +163,6 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog id="backupDialog" class="modal-dialog"><div class="dialog-head"><div><div class="eyebrow">DATA MANAGEMENT</div><h2>Backup & restore</h2></div><button class="icon-button" id="closeBackup" aria-label="Close">×</button></div><p>Download a copy of your products and saved calculations, or restore from a Lebruni JSON backup file.</p><div class="backup-actions"><button class="button button-primary" id="downloadBackup">Download backup</button><label class="button button-secondary file-button">Restore backup<input id="restoreBackup" type="file" accept="application/json,.json" hidden></label></div><div class="storage-warning"><strong>Important</strong><span>Local browser data is not synced between devices. Restoring replaces the current products and calculation history in this browser.</span></div></dialog>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

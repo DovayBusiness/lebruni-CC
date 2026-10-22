@@ -15,8 +15,9 @@ Then open `http://localhost:8000`.
 ## What is included
 
 - Batch inputs for ERP quantity, additional soya, raw-material price, exchange rate, oil/meal selling prices and profit margins.
-- Product setup for fixed rates, yields, processing inputs, overheads, packaging prices, legacy stored values, editable item-code mean-cost rows, and configurable soybean joint-cost allocation percentages. Each Soybean input’s NRV-pool and direct percentages must total 100%.
+- Product setup for fixed rates, yields, processing inputs, overheads, packaging prices, legacy stored values and editable item-code mean-cost rows.
 - Live landed-cost, direct-cost, yield, NRV joint-cost allocation, cost-per-MT, packaged-product, break-even, target-price and profitability summaries.
+- Editable per-input NRV-pool and direct-share percentages for soybean joint costing; each pair must total 100%. Meal packaging remains assigned to meal, and the remaining shared pool is distributed between oil and meal by NRV%.
 - Save/open/delete calculations in browser history, print, per-calculation JSON export, and full JSON backup/restore.
 - Responsive desktop and mobile interface with larger text and four round top-bar themes (ocean blue is the default; forest, plum and amber are also available). Each palette colors the full interface, and the selected theme is saved locally.
 
@@ -37,5 +38,5 @@ The PHP logic was translated from the supplied file. It contains some unusual or
 - The raw-material landed-cost total adds both a CIS line and a clearing/terminal line using the same configured CIS rate.
 - The direct-material display applies a 19% factor to phosphoric acid, caustic soda, citric acid and bleaching clay, but other legacy calculation blocks use those costs without that factor.
 - The break-even calculation includes a fixed NGN 550,000,000 overhead pool.
-- For Soybean-to-refined-oil, the first allocation percentage creates the shared NRV pool and the second is a direct addition. The pool is shared between refined oil and meal by their NRV percentages. Direct additions go to refinery except meal packaging, which is assigned directly to meal once and excluded from the shared pool. Allocation percentages are editable in Soybean Product Setup, with a 100% total required for each input. Defaults are 100/0 for raw material, gas 10-ton and hexane; 70/30 for labor, diesel, generator, water and indirect labor; and 0/100 for gas 5-ton, the four 19%-factor acids/clay and meal packaging.
+- Soybean joint-cost shares are editable in Product setup; each input has an NRV-pool percentage and a direct-share percentage that must total 100%. The shared pool is allocated by oil and meal NRV, while direct costs are charged to refinery except meal packaging, which is assigned once to meal.
 - Rates and formulas should be checked against known examples from the existing calculator before using this version for accounting or financial decisions.
