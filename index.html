@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10231d">
+  <title>Lebruni CostCalculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">L</div>
+        <div><strong>LEBRUNI</strong><span>COSTCALCULATOR</span></div>
+      </div>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-page="calculator"><span class="nav-icon">▦</span> Cost calculator</button>
+        <button class="nav-item" data-page="products"><span class="nav-icon">◈</span> Product setup</button>
+        <button class="nav-item" data-page="history"><span class="nav-icon">◷</span> Calculation history</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="storage-card"><span class="status-dot"></span><div><strong>Local storage</strong><small>Saved on this browser</small></div></div>
+        <button class="nav-item" id="backupButton"><span class="nav-icon">⇩</span> Backup & restore</button>
+        <div class="sidebar-foot">LEBRUNI COSTCALCULATOR <span>VERSION 1.0</span></div>
+      </div>
+    </aside>
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button>
+        <div class="breadcrumbs"><span>Lebruni</span><b>/</b><strong id="crumbCurrent">Cost calculator</strong></div>
+        <div class="top-actions"><div class="theme-picker" role="group" aria-label="Choose theme color"><button class="theme-dot forest" data-theme-choice="forest" aria-label="Forest green theme" title="Forest"></button><button class="theme-dot ocean" data-theme-choice="ocean" aria-label="Ocean blue theme" title="Ocean"></button><button class="theme-dot plum" data-theme-choice="plum" aria-label="Plum theme" title="Plum"></button><button class="theme-dot amber" data-theme-choice="amber" aria-label="Amber theme" title="Amber"></button></div><span class="local-badge"><i></i> LOCAL MODE</span><button class="avatar" title="Lebruni workspace">L</button></div>
+      </header>
+      <section class="page active" id="page-calculator">
+        <div class="page-heading">
+          <div><div class="eyebrow">PRODUCTION FINANCE</div><h1>Cost calculator</h1><p>Model your landed cost, production yields, product allocation and selling margins.</p></div>
+          <div class="heading-actions"><button class="button button-secondary" id="newCalc">＋ New calculation</button><button class="button button-primary" id="saveCalc">Save calculation <span>↗</span></button></div>
+        </div>
+        <div class="notice"><span class="notice-icon">i</span><div><strong>First version — browser storage</strong><span>Setup values and saved calculations stay in this browser only. Export a backup before clearing browser data or moving devices.</span></div><button class="notice-link" data-page="products">Set up products →</button></div>
+        <div class="calc-grid">
+          <div class="left-column">
+            <section class="panel">
+              <div class="panel-heading"><div><h2>Calculation inputs</h2><p>Enter the production batch and market inputs.</p></div><span class="step-chip">01 / INPUTS</span></div>
+              <div class="form-grid">
+                <label class="field"><span>Calculation date <em>*</em></span><input id="calcDate" type="date"></label>
+                <label class="field"><span>Product setup <em>*</em></span><select id="productSelect"></select></label>
+                <label class="field field-wide"><span>Reference</span><input id="calcReference" type="text" placeholder="Created when saved"></label>
+              </div>
+              <div class="section-label">PRODUCTION QUANTITIES <span>TONNES</span></div>
+              <div class="form-grid two">
+                <label class="field"><span>Processed to date (ERP) <em>*</em></span><div class="input-unit"><input id="qtyProcessed" type="number" min="0" step="0.001" placeholder="0.000"><small>MT</small></div></label>
+                <label class="field"><span>Additional soya crude / seed <em>*</em></span><div class="input-unit"><input id="qtySoya" type="number" min="0" step="0.001" placeholder="0.000"><small>MT</small></div></label>
+              </div>
+              <div class="section-label">RAW MATERIAL & EXCHANGE RATE</div>
+              <div class="form-grid two">
+                <label class="field"><span>Raw material price <em>*</em></span><div class="input-unit"><span class="unit-prefix">$ / ₦</span><input id="rawPrice" type="number" min="0" step="0.01" placeholder="0.00"><small>/ MT</small></div><small class="field-hint">Enter the applicable CIF USD or NGN/MT price.</small></label>
+                <label class="field"><span>USD–NGN exchange rate <em>*</em></span><div class="input-unit"><span class="unit-prefix">₦</span><input id="exchangeRate" type="number" min="0" step="0.01" placeholder="0.00"><small>/ USD</small></div></label>
+              </div>
+              <div class="section-label">SELLING PRICE & PROFIT TARGETS <span>NGN PER MT</span></div>
+              <div class="form-grid two">
+                <label class="field"><span>Refined oil selling price <em>*</em></span><div class="input-unit"><span class="unit-prefix">₦</span><input id="oilPrice" type="number" min="0" step="0.01" placeholder="0.00"><small>/ MT</small></div></label>
+                <label class="field"><span>Soya meal selling price <em>*</em></span><div class="input-unit"><span class="unit-prefix">₦</span><input id="mealPrice" type="number" min="0" step="0.01" placeholder="0.00"><small>/ MT</small></div></label>
+                <label class="field"><span>Refined oil profit margin</span><div class="input-unit"><input id="oilMargin" type="number" min="0" step="0.01" placeholder="0.00"><small>%</small></div></label>
+                <label class="field"><span>Soya meal profit margin</span><div class="input-unit"><input id="mealMargin" type="number" min="0" step="0.01" placeholder="0.00"><small>%</small></div></label>
+              </div>
+              <div class="live-total"><div class="total-icon">∑</div><div><span>TOTAL QUANTITY FOR THIS BATCH</span><small>ERP processed + additional soya</small></div><strong id="totalQtyDisplay">0.000 <small>MT</small></strong></div>
+            </section>
+            <section class="panel results-panel">
+              <div class="panel-heading"><div><h2>Cost & production breakdown</h2><p>Calculated from the selected product setup and current batch.</p></div><button class="text-button" id="toggleDetails">Hide details −</button></div>
+              <div id="resultsContent" class="results-content"></div>
+            </section>
+          </div>
+          <aside class="right-column">
+            <section class="summary-card">
+              <div class="summary-top"><span class="summary-kicker">BATCH OVERVIEW</span><span class="summary-icon">↗</span></div>
+              <h3 id="summaryProduct">Select a product</h3><p id="summaryDate">Choose a product setup to begin</p>
+              <div class="summary-divider"></div>
+              <div class="metric"><span>Total input</span><strong id="summaryQty">0.000 MT</strong></div>
+              <div class="metric"><span>Refined oil yield</span><strong id="summaryOilYield">0.000 MT</strong></div>
+              <div class="metric"><span>Soya meal yield</span><strong id="summaryMealYield">0.000 MT</strong></div>
+              <div class="summary-divider"></div>
+              <div class="metric metric-highlight"><span>Est. net profit</span><strong id="summaryNetProfit">₦0.00</strong></div>
+              <div class="summary-foot">Live estimate · before saving</div>
+            </section>
+            <section class="panel quick-card"><div class="panel-heading"><div><h2>Quick actions</h2><p>Manage this calculator.</p></div></div><button class="quick-action" id="printButton"><span>▤</span><div><strong>Print calculation</strong><small>Open a print-ready report</small></div><b>›</b></button><button class="quick-action" id="exportCurrent"><span>⇩</span><div><strong>Export this calculation</strong><small>Download a JSON copy</small></div><b>›</b></button><button class="quick-action" data-page="products"><span>⚙</span><div><strong>Manage product setup</strong><small>Edit fixed costs and yields</small></div><b>›</b></button></section>
+            <div class="formula-note"><strong>Legacy formula compatibility</strong><p>Calculations follow the supplied PHP logic. A few legacy formulas appear to count some charges more than once; verify results against your existing system before using them for financial decisions.</p></div>
+          </aside>
+        </div>
+      </section>
+      <section class="page" id="page-products">
+        <div class="page-heading"><div><div class="eyebrow">CONFIGURATION</div><h1>Product setup</h1><p>Maintain the fixed rates, yield percentages and product-specific rules used in calculations.</p></div><div class="heading-actions"><button class="button button-secondary" id="addProduct">＋ Add product</button></div></div>
+        <div class="notice"><span class="notice-icon">i</span><div><strong>Stored only in this browser</strong><span>These setup values will not transfer to another device until connected to Supabase. Use Backup & restore to keep a copy.</span></div><button class="notice-link" id="setupBackup">Backup values →</button></div>
+        <div class="product-layout"><section class="panel product-list-panel"><div class="panel-heading"><div><h2>Your products</h2><p id="productCount">0 product setups</p></div></div><div id="productList" class="product-list"></div></section><section class="panel product-editor"><div class="panel-heading"><div><h2 id="editorTitle">Product configuration</h2><p>Set fixed product-specific values. Blank rates are treated as zero.</p></div><span class="step-chip">SETUP</span></div><div id="emptyEditor" class="empty-state"><div class="empty-icon">◈</div><strong>Select a product to edit</strong><p>Or add a product to create your first setup.</p><button class="button button-primary" id="emptyAddProduct">＋ Add product</button></div><form id="productForm" class="hidden" autocomplete="off">
+          <input id="editProductId" type="hidden">
+          <div class="section-label">PRODUCT IDENTITY</div><div class="form-grid"><label class="field field-wide"><span>Product name <em>*</em></span><input id="pName" type="text" required placeholder="e.g. Soyabean to refined oil"></label><label class="field field-wide"><span>Calculation type</span><select id="pType"><option value="soy">Soybean to refined oil (70/30 allocation)</option><option value="imported">Imported crude oil to refined oil</option><option value="other">Other product (single-product costing)</option></select><small class="field-hint">The supplied code applies special joint-cost allocation to “Soyabean to refined oil”.</small></label></div>
+          <div class="section-label">TAXES, CLEARING & YIELDS</div><div class="form-grid two">
+            <label class="field"><span>Import duty</span><div class="input-unit"><input id="pImportDuty" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field"><span>VAT on import duty</span><div class="input-unit"><input id="pVat" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field"><span>ETLS</span><div class="input-unit"><input id="pEtls" type="number" step="0.0001" min="0"><small>% of CIF</small></div></label>
+            <label class="field"><span>CIS / terminal rate</span><div class="input-unit"><input id="pCis" type="number" step="0.0001" min="0"><small>%</small></div><small class="field-hint">The legacy calculation applies this rate to CIS and clearing/terminal.</small></label>
+            <label class="field"><span>Clearing charge per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pClearing" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
+            <label class="field"><span>Local transport per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pTransport" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
+            <label class="field"><span>Refined oil yield</span><div class="input-unit"><input id="pOilYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field"><span>Soya meal yield</span><div class="input-unit"><input id="pMealYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field"><span>Waste / process loss</span><div class="input-unit"><input id="pWasteYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
+          </div>
+          <div class="section-label">PROCESSING COST DRIVERS</div><div class="form-grid two">
+            <label class="field"><span>Direct labor (NGN)</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pDirectLabor" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>Indirect labor (USD)</span><div class="input-unit"><span class="unit-prefix">$</span><input id="pIndirectLabor" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>Water treatment per MT</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pWater" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>Diesel usage per MT</span><div class="input-unit"><input id="pDieselQty" type="number" step="0.0001" min="0"><small>litres / MT</small></div></label>
+            <label class="field"><span>Diesel price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pDieselPrice" type="number" step="0.01" min="0"><small>/ litre</small></div></label>
+            <label class="field"><span>Gen 1 & 2 usage per MT</span><div class="input-unit"><input id="pGen12Qty" type="number" step="0.0001" min="0"><small>SCM / MT</small></div></label>
+            <label class="field"><span>SCM price</span><div class="input-unit"><span class="unit-prefix">$</span><input id="pScm" type="number" step="0.01" min="0"><small>/ SCM</small></div></label>
+            <label class="field"><span>Gas 5-ton usage factor</span><div class="input-unit"><input id="pGas5" type="number" step="0.0001" min="0"><small>SCM</small></div></label>
+            <label class="field"><span>Water treatment is applied per</span><select id="pReserved" disabled><option>MT processed</option></select></label>
+          </div>
+          <div class="section-label">SOLVENT & MATERIALS</div><div class="form-grid two">
+            <label class="field"><span>Apply hexane / gas 10 formula</span><select id="pHexaneFormula"><option value="0">No</option><option value="1">Yes</option></select></label>
+            <label class="field"><span>Gas 10 usage per MT</span><div class="input-unit"><input id="pGas10Qty" type="number" step="0.0001" min="0"><small>SCM / MT</small></div></label>
+            <label class="field"><span>Hexane usage per MT</span><div class="input-unit"><input id="pHexaneQty" type="number" step="0.0001" min="0"><small>litres / MT</small></div></label>
+            <label class="field"><span>Hexane price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pHexanePrice" type="number" step="0.01" min="0"><small>/ litre</small></div></label>
+            <label class="field"><span>Phosphoric acid usage</span><div class="input-unit"><input id="pPhosQty" type="number" step="0.0001" min="0"><small>kg / MT</small></div></label>
+            <label class="field"><span>Phosphoric acid price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPhosPrice" type="number" step="0.01" min="0"><small>/ kg</small></div></label>
+            <label class="field"><span>Caustic soda usage</span><div class="input-unit"><input id="pCausticQty" type="number" step="0.0001" min="0"><small>kg / MT</small></div></label>
+            <label class="field"><span>Caustic soda price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pCausticPrice" type="number" step="0.01" min="0"><small>/ kg</small></div></label>
+            <label class="field"><span>Citric acid usage</span><div class="input-unit"><input id="pCitricQty" type="number" step="0.0001" min="0"><small>kg / MT</small></div></label>
+            <label class="field"><span>Citric acid price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pCitricPrice" type="number" step="0.01" min="0"><small>/ kg</small></div></label>
+            <label class="field"><span>Bleaching clay usage</span><div class="input-unit"><input id="pBleachQty" type="number" step="0.0001" min="0"><small>kg / MT</small></div></label>
+            <label class="field"><span>Bleaching clay price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pBleachPrice" type="number" step="0.01" min="0"><small>/ kg</small></div></label>
+            <label class="field"><span>Meal packaging bags per MT</span><div class="input-unit"><input id="pMealBagFactor" type="number" step="0.0001" min="0"><small>bags / MT</small></div></label>
+            <label class="field"><span>Apply meal packing formula</span><select id="pMealPacking"><option value="0">No</option><option value="1">Yes</option></select></label>
+            <label class="field"><span>Meal bag price</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pBagPrice" type="number" step="0.01" min="0"><small>/ bag</small></div></label>
+          </div>
+          <div class="section-label">PACKAGING COSTS & OVERHEAD</div><div class="form-grid two">
+            <label class="field"><span>Selling & administrative expenses</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pSellingExpenses" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>Finance cost</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pFinance" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>1 litre packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack1" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>3 litre packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack3" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>5 litre packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack5" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>10 litre packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack10" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>25 litre packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack25" type="number" step="0.01" min="0"></div></label>
+            <label class="field"><span>45 ml packaging</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pPack45" type="number" step="0.01" min="0"></div></label>
+          </div>
+          <div class="editor-actions"><button class="button button-danger" type="button" id="deleteProduct">Delete product</button><div><button class="button button-secondary" type="button" id="resetProduct">Cancel</button><button class="button button-primary" type="submit">Save product setup</button></div></div>
+        </form></section></div>
+      </section>
+      <section class="page" id="page-history">
+        <div class="page-heading"><div><div class="eyebrow">SAVED WORK</div><h1>Calculation history</h1><p>Review saved production calculations from this browser.</p></div><div class="heading-actions"><button class="button button-secondary" id="historyExport">Export history</button></div></div>
+        <section class="panel history-panel"><div class="history-toolbar"><div><h2>Saved calculations</h2><p id="historyCount">0 records</p></div><input id="historySearch" type="search" placeholder="Search reference or product…"></div><div id="historyTable"></div></section>
+      </section>
+      <footer class="main-footer"><span>Lebruni CostCalculator</span><span>Numbers shown are estimates from your configured inputs.</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="backupDialog" class="modal-dialog"><div class="dialog-head"><div><div class="eyebrow">DATA MANAGEMENT</div><h2>Backup & restore</h2></div><button class="icon-button" id="closeBackup" aria-label="Close">×</button></div><p>Download a copy of your products and saved calculations, or restore from a Lebruni JSON backup file.</p><div class="backup-actions"><button class="button button-primary" id="downloadBackup">Download backup</button><label class="button button-secondary file-button">Restore backup<input id="restoreBackup" type="file" accept="application/json,.json" hidden></label></div><div class="storage-warning"><strong>Important</strong><span>Local browser data is not synced between devices. Restoring replaces the current products and calculation history in this browser.</span></div></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
