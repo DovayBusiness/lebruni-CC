@@ -116,3 +116,13 @@ body,.app-shell,.main-area{background:var(--paper);color:var(--ink)}
 .cost-item-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .add-cost-item{margin-top:10px}
 @media(max-width:650px){.cost-item-header,.cost-item-row{grid-template-columns:minmax(105px,1fr) minmax(105px,1fr) 66px;gap:6px;padding-left:7px;padding-right:7px}.cost-item-row .small-action{font-size:10px;padding:7px 5px}.cost-item-header{font-size:10px}}
+
+/* Editable soybean joint-cost pool/direct allocation rules */
+.allocation-rule-head,.allocation-rule-row{display:grid;grid-template-columns:minmax(210px,1fr) minmax(100px,150px) minmax(100px,150px);gap:10px;align-items:center}
+.allocation-rule-head{padding:10px 12px;border:1px solid var(--line);border-radius:9px 9px 0 0;background:var(--table-head-bg);color:var(--accent-dark);font-size:11px;font-weight:700}
+.allocation-rule-row{padding:7px 12px;border:1px solid var(--line);border-top:0;background:var(--white);font-size:12px;color:var(--ink)}
+.allocation-rule-row:last-child{border-radius:0 0 9px 9px}
+.allocation-rule-row label{min-width:0}.allocation-rule-row input{width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--white);color:var(--ink);font:inherit;font-size:12px}
+.allocation-rule-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:650px){.allocation-rule-head,.allocation-rule-row{grid-template-columns:minmax(115px,1fr) minmax(78px,90px) minmax(78px,90px);gap:6px;padding-left:7px;padding-right:7px}.allocation-rule-head{font-size:10px}.allocation-rule-row{font-size:10px}.allocation-rule-row input{padding:0 5px;font-size:11px}}
