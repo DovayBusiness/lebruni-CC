@@ -1,0 +1,141 @@
+const STORE_KEY = 'lebruni-costcalculator-v1';
+const $ = (id) => document.getElementById(id);
+const today = () => new Date().toISOString().slice(0, 10);
+const n = (value) => Number.parseFloat(value) || 0;
+const money = (value, currency = 'NGN') => new Intl.NumberFormat('en-NG', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.isFinite(value) ? value : 0);
+const num = (value, digits = 2) => new Intl.NumberFormat('en-NG', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number.isFinite(value) ? value : 0);
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const defaultProduct = (name, type) => ({id: crypto.randomUUID(), name, type, importDuty:0, vat:0, etls:0, cis:0, clearing:0, transport:0, oilYield:0, mealYield:0, wasteYield:0, directLabor:0, indirectLabor:0, water:0, dieselQty:0, dieselPrice:0, gen12Qty:0, scm:0, gas5:0, hexaneFormula:0, gas10Qty:0, hexaneQty:0, hexanePrice:0, phosQty:0, phosPrice:0, causticQty:0, causticPrice:0, citricQty:0, citricPrice:0, bleachQty:0, bleachPrice:0, mealBagFactor:20, mealPacking:0, bagPrice:0, sellingExpenses:0, finance:0, pack1:0, pack3:0, pack5:0, pack10:0, pack25:0, pack45:0});
+let state = loadState();
+let currentResult = null;
+let showDetails = true;
+let selectedProductId = state.products[0]?.id || null;
+let editingProductId = null;
+let toastTimer;
+function loadState(){
+  try { const saved = JSON.parse(localStorage.getItem(STORE_KEY)); if(saved && Array.isArray(saved.products) && Array.isArray(saved.history)) return saved; } catch(e) {}
+  return {products:[defaultProduct('Soyabean to refined oil','soy'),defaultProduct('Imported crude oil to refined oil','imported')],history:[],theme:'forest'};
+}
+function persist(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function showToast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
+function activeProduct(){return state.products.find(p=>p.id===selectedProductId)||state.products[0]||null;}
+function readInputs(){return {date:$('calcDate').value||today(),productId:$('productSelect').value,reference:$('calcReference').value.trim(),qtyProcessed:n($('qtyProcessed').value),qtySoya:n($('qtySoya').value),rawPrice:n($('rawPrice').value),exchangeRate:n($('exchangeRate').value),oilPrice:n($('oilPrice').value),mealPrice:n($('mealPrice').value),oilMargin:n($('oilMargin').value),mealMargin:n($('mealMargin').value)};}
+function calculate(input, product){
+  if(!product) return null;
+  const q=input.qtyProcessed+input.qtySoya, oilYield=q*n(product.oilYield)/100, mealYield=q*n(product.mealYield)/100, wasteYield=q*n(product.wasteYield)/100;
+  const imported=product.type==='imported'||product.name.toUpperCase()==='IMPORTED CRUDE OIL TO REFINED OIL';
+  const soyabeanPrice=q*input.rawPrice*(imported?input.exchangeRate:1);
+  const duty=soyabeanPrice*n(product.importDuty)/100, vat=duty*n(product.vat)/100, etls=soyabeanPrice*n(product.etls)/100;
+  const clearing=q*n(product.clearing)/22, transport=q*n(product.transport)/22;
+  const cisRate=n(product.cis)/100, cis=soyabeanPrice*cisRate, terminal=soyabeanPrice*cisRate;
+  // Preserve both legacy source lines: CIS and clearing/terminal charges each use the configured CIS rate.
+  const landed=soyabeanPrice+duty+vat+etls+clearing+transport+terminal+cis;
+  const landedPerMt=q?landed/q:0;
+  const g24=q*landedPerMt, g25=n(product.directLabor), g27=n(product.dieselQty)*q*n(product.dieselPrice), g28=n(product.gen12Qty)*q*n(product.scm)*input.exchangeRate, g29=n(product.water)*q;
+  const gas10Qty=n(product.hexaneFormula)?n(product.gas10Qty)*q:0, solventCost=gas10Qty*n(product.scm)*input.exchangeRate;
+  const hexaneQty=n(product.hexaneFormula)?n(product.hexaneQty)*q:0, hexaneCost=hexaneQty*n(product.hexanePrice);
+  const gas5Cost=n(product.scm)*input.exchangeRate*q*n(product.gas5)*(n(product.oilYield)/100);
+  const phosphoricCost=q*n(product.phosQty)*n(product.phosPrice), causticCost=q*n(product.causticQty)*n(product.causticPrice), citricCost=q*n(product.citricQty)*n(product.citricPrice), bleachCost=q*n(product.bleachQty)*n(product.bleachPrice);
+  const mealBags=n(product.mealPacking)?mealYield*n(product.mealBagFactor):0, mealPackingCost=mealBags*n(product.bagPrice), indirect=n(product.indirectLabor)*input.exchangeRate;
+  const productionCost=q*landedPerMt+g25+g27+g28+g29+solventCost+hexaneCost+gas5Cost+phosphoricCost+causticCost+citricCost+bleachCost+mealPackingCost+indirect;
+  const special=product.type==='soy'||product.name.toUpperCase()==='SOYABEAN TO REFINED OIL';
+  const tillEnd=special?g24+g25*.7+g27*.5+g28*.5+g29*.7+solventCost+hexaneCost+indirect*.7:0;
+  const refineryCost=special?g25*.3+g27*.5+g28*.5+g29*.3+gas5Cost+phosphoricCost+causticCost+citricCost+bleachCost+indirect*.3:productionCost;
+  const totalProd=tillEnd+refineryCost+mealPackingCost;
+  const oilSales=input.oilPrice*oilYield, mealSales=input.mealPrice*mealYield;
+  const oilNrv=Math.abs(oilSales-refineryCost), mealNrv=mealSales-mealPackingCost, totalNrv=oilNrv+mealNrv;
+  const oilNrvPct=totalNrv?oilNrv/totalNrv*100:0, mealNrvPct=totalNrv?mealNrv/totalNrv*100:0;
+  const oilAlloc=tillEnd*oilNrvPct/100, mealAlloc=tillEnd*mealNrvPct/100;
+  const oilTotalCost=refineryCost+oilAlloc, mealTotalCost=mealPackingCost+mealAlloc;
+  const oilCostMt=oilYield>1?oilTotalCost/oilYield:oilTotalCost, mealCostMt=mealYield>1?mealTotalCost/mealYield:mealTotalCost;
+  const oilCostLiter=oilYield?oilTotalCost/((1000/.917)*oilYield):0;
+  const overheadPool=q?(550000000/(oilYield+mealYield||1)):0;
+  const oilBreakEven=overheadPool+oilCostMt, mealBreakEven=special?overheadPool+mealCostMt:0;
+  const oilMarginValue=oilBreakEven*input.oilMargin/100, mealMarginValue=mealBreakEven*input.mealMargin/100;
+  const oilSellPrice=input.oilMargin===0?input.oilPrice:oilBreakEven+oilMarginValue, mealSellPrice=input.mealMargin===0?input.mealPrice:mealBreakEven+mealMarginValue;
+  const oilNetPerMt=input.oilMargin===0?0:oilSellPrice-oilBreakEven, mealNetPerMt=input.mealMargin===0?0:mealSellPrice-mealBreakEven;
+  const totalExpenses=n(product.sellingExpenses)+n(product.finance), grossProfit=oilSales+mealSales-oilTotalCost-mealTotalCost, netProfit=grossProfit-totalExpenses;
+  const packageBase=oilCostLiter;
+  const packaging=[{item:'LIORGA 1 LITRE',size:'1 L',cost:packageBase,pack:n(product.pack1)},{item:'LIORGA 3 LITRE',size:'3 L',cost:packageBase*3,pack:n(product.pack3)},{item:'LIORGA 5 LITRE',size:'5 L',cost:packageBase*5,pack:n(product.pack5)},{item:'LIORGA 10 LITRE',size:'10 L',cost:packageBase*10,pack:n(product.pack10)},{item:'LIORGA 25 LITRE',size:'25 L',cost:packageBase*25,pack:n(product.pack25)},{item:'LIORGA 45 ML',size:'45 ML',cost:packageBase/1000*45,pack:n(product.pack45)}].map(x=>({...x,total:x.cost+x.pack}));
+  const materials=[
+    {item:'Raw material / landed CIF',qty:q,unit:'MT',unitPrice:landedPerMt,cost:landed},
+    {item:'Direct labor',qty:1,unit:'Batch',unitPrice:g25,cost:g25},
+    {item:'Diesel',qty:n(product.dieselQty)*q,unit:'Litres',unitPrice:n(product.dieselPrice),cost:g27},
+    {item:'Generator 1 & 2',qty:n(product.gen12Qty)*q,unit:'SCM',unitPrice:n(product.scm)*input.exchangeRate,cost:g28},
+    {item:'Water treatment',qty:q,unit:'MT',unitPrice:n(product.water),cost:g29},
+    {item:'Gas 10-ton boiler',qty:gas10Qty,unit:'SCM',unitPrice:n(product.scm)*input.exchangeRate,cost:solventCost},
+    {item:'Hexane',qty:hexaneQty,unit:'Litres',unitPrice:n(product.hexanePrice),cost:hexaneCost},
+    {item:'Gas 5-ton boiler',qty:q*n(product.gas5)*(n(product.oilYield)/100),unit:'SCM',unitPrice:n(product.scm)*input.exchangeRate,cost:gas5Cost},
+    {item:'Phosphoric acid (legacy 19% factor)',qty:q*n(product.phosQty)*.19,unit:'KG',unitPrice:n(product.phosPrice),cost:phosphoricCost*.19},
+    {item:'Caustic soda (legacy 19% factor)',qty:q*n(product.causticQty)*.19,unit:'KG',unitPrice:n(product.causticPrice),cost:causticCost*.19},
+    {item:'Citric acid (legacy 19% factor)',qty:q*n(product.citricQty)*.19,unit:'KG',unitPrice:n(product.citricPrice),cost:citricCost*.19},
+    {item:'Bleaching clay (legacy 19% factor)',qty:q*n(product.bleachQty)*.19,unit:'KG',unitPrice:n(product.bleachPrice),cost:bleachCost*.19},
+    {item:'Meal packaging bags',qty:mealBags,unit:'Bags',unitPrice:n(product.bagPrice),cost:mealPackingCost},
+    {item:'Indirect labor',qty:n(product.indirectLabor),unit:'USD',unitPrice:input.exchangeRate,cost:indirect}
+  ];
+  const directTotal=materials.reduce((s,x)=>s+x.cost,0);
+  return {q,oilYield,mealYield,wasteYield,soyabeanPrice,duty,vat,etls,clearing,transport,cis,terminal,landed,landedPerMt,materials,directTotal,productionCost,tillEnd,refineryCost,mealPackingCost,totalProd,oilSales,mealSales,oilNrv,mealNrv,totalNrv,oilNrvPct,mealNrvPct,oilAlloc,mealAlloc,oilTotalCost,mealTotalCost,oilCostMt,mealCostMt,oilCostLiter,overheadPool,oilBreakEven,mealBreakEven,oilSellPrice,mealSellPrice,oilNetPerMt,mealNetPerMt,totalExpenses,grossProfit,netProfit,packaging,oilMarginValue,mealMarginValue};
+}
+function syncCalc(){
+  const p=state.products.find(x=>x.id===$('productSelect').value)||null; selectedProductId=p?.id||null;
+  const input=readInputs(); currentResult=calculate(input,p);
+  $('totalQtyDisplay').innerHTML=`${num(input.qtyProcessed+input.qtySoya,3)} <small>MT</small>`;
+  $('summaryProduct').textContent=p?.name||'No product set up'; $('summaryDate').textContent=input.date?new Date(input.date+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'Choose a date';
+  $('summaryQty').textContent=`${num(currentResult?.q||0,3)} MT`;
+  $('summaryOilYield').textContent=`${num(currentResult?.oilYield||0,3)} MT`;
+  $('summaryMealYield').textContent=`${num(currentResult?.mealYield||0,3)} MT`;
+  $('summaryNetProfit').textContent=money(currentResult?.netProfit||0);
+  renderResults(currentResult);
+}
+function section(title, unit, table){return `<section class="result-section"><div class="result-section-head"><strong>${title}</strong><span>${unit||''}</span></div>${table}</section>`;}
+function table(headers, rows){return `<div style="overflow:auto"><table class="result-table"><thead><tr>${headers.map((h,i)=>`<th${i===0?'':' class="numcol"'}>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;}
+function renderResults(r){
+  if(!r||r.q<=0){$('resultsContent').innerHTML='<div class="no-results"><strong>Enter batch quantities to see the calculation.</strong><br>Results update as you fill in the inputs. Check Product setup for yield and cost rates.</div>';return;}
+  const row=(cells,cls='')=>`<tr class="${cls}">${cells.map((c,i)=>`<td>${i===0?c:c}</td>`).join('')}</tr>`;
+  const materialRows=r.materials.map(x=>row([escapeHtml(x.item),num(x.qty,3),x.unit,money(x.unitPrice),money(x.cost)]));
+  materialRows.push(row(['Total calculated direct / process inputs','','','',money(r.directTotal)],'total-row'));
+  const yieldRows=[row(['Refined oil',`${num(r.oilYield,3)} MT`,`${num(r.oilYield?100*r.oilYield/r.q:0,2)}%`]),row(['Soya meal',`${num(r.mealYield,3)} MT`,`${num(r.mealYield?100*r.mealYield/r.q:0,2)}%`]),row(['Waste / process loss',`${num(r.wasteYield,3)} MT`,`${num(r.wasteYield?100*r.wasteYield/r.q:0,2)}%`]),row(['Total output',`${num(r.oilYield+r.mealYield+r.wasteYield,3)} MT`,`${num(r.q?(r.oilYield+r.mealYield+r.wasteYield)/r.q*100:0,2)}%`],'total-row')];
+  const landedRows=[row(['CIF raw material',money(r.soyabeanPrice)]),row(['Import duty',money(r.duty)]),row(['VAT on duty',money(r.vat)]),row(['ETLS',money(r.etls)]),row(['Clearing & terminal',money(r.clearing+r.terminal)]),row(['Local transportation',money(r.transport)]),row(['CIS (legacy line)',money(r.cis)]),row(['Total landed cost',money(r.landed)],'total-row'),row(['Landed cost per MT',money(r.landedPerMt)],'total-row')];
+  const jointRows=[row(['Refined oil',`${num(r.oilYield,3)} MT`,money(r.oilSales),money(r.refineryCost),money(r.oilNrv),`${num(r.oilNrvPct)}%`,money(r.oilAlloc)]),row(['Soya meal',`${num(r.mealYield,3)} MT`,money(r.mealSales),money(r.mealPackingCost),money(r.mealNrv),`${num(r.mealNrvPct)}%`,money(r.mealAlloc)]),row(['Total',`${num(r.oilYield+r.mealYield,3)} MT`,money(r.oilSales+r.mealSales),money(r.refineryCost+r.mealPackingCost),money(r.totalNrv),'100%',money(r.oilAlloc+r.mealAlloc)],'total-row')];
+  const costRows=[row(['Refined oil',money(r.refineryCost),money(r.oilAlloc),money(r.oilTotalCost),money(r.oilCostMt),money(r.oilCostLiter)]),row(['Soya meal',money(r.mealPackingCost),money(r.mealAlloc),money(r.mealTotalCost),money(r.mealCostMt),'—']),row(['Total production cost',money(r.refineryCost+r.mealPackingCost),money(r.oilAlloc+r.mealAlloc),money(r.totalProd),'—','—'],'total-row')];
+  const packRows=r.packaging.map(x=>row([x.item,x.size,money(x.cost),money(x.pack),money(x.total)]));
+  const sellRows=[row(['Refined oil',money(r.oilBreakEven),`${num(n($('oilMargin').value))}%`,money(r.oilMarginValue),money(r.oilSellPrice),money(r.oilNetPerMt)]),row(['Soya meal',money(r.mealBreakEven),`${num(n($('mealMargin').value))}%`,money(r.mealMarginValue),money(r.mealSellPrice),money(r.mealNetPerMt)])];
+  const profitRows=[row(['Oil + meal sales',money(r.oilSales+r.mealSales)]),row(['Allocated production cost',money(r.oilTotalCost+r.mealTotalCost)]),row(['Gross profit',money(r.grossProfit)],'total-row'),row(['Selling & administrative + finance expenses',money(r.totalExpenses)]),row(['Estimated net profit',money(r.netProfit)],'total-row')];
+  let markup=section('Landed raw-material cost','NGN',[table(['Cost component','Amount'],landedRows.join(''))]);
+  markup+=section('Direct material & processing breakdown','NGN',[table(['Input','Quantity','Unit','Unit cost','Extended cost'],materialRows.join(''))]);
+  markup+=section('Expected production yields','TONNES',[table(['Product','Yield','Share'],yieldRows.join(''))]);
+  markup+=section('Joint cost sharing method · NRV','NGN',[table(['Product','Qty','Sales value','Added cost','NRV','NRV %','Cost allocation'],jointRows.join(''))]);
+  markup+=section('Product cost per MT & litre','NGN',[table(['Product','Direct cost','Allocated cost','Total cost','Cost / MT','Cost / litre'],costRows.join(''))]);
+  markup+=section('Finished-goods packaging cost','NGN',[table(['Product pack','Size','Base cost','Packaging','Cost per pack'],packRows.join(''))]);
+  markup+=section('Break-even & target selling price','NGN',[table(['Product','Break-even / MT','Margin','Target profit / MT','Selling price / MT','Profit / MT'],sellRows.join(''))]);
+  markup+=section('Batch profitability summary','NGN',[table(['Summary','Amount'],profitRows.join(''))]);
+  $('resultsContent').innerHTML=showDetails?markup:`<div class="no-results">Calculation details are hidden. <strong>${money(r.netProfit)}</strong> estimated net profit.</div>`;
+}
+function renderProductSelect(){const select=$('productSelect');const old=selectedProductId;select.innerHTML=state.products.length?state.products.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join(''):'<option value="">Add a product in Product setup</option>';if(state.products.some(p=>p.id===old))select.value=old;else if(state.products[0]){select.value=state.products[0].id;selectedProductId=select.value;}syncCalc();}
+const fieldMap={pImportDuty:'importDuty',pVat:'vat',pEtls:'etls',pCis:'cis',pClearing:'clearing',pTransport:'transport',pOilYield:'oilYield',pMealYield:'mealYield',pWasteYield:'wasteYield',pDirectLabor:'directLabor',pIndirectLabor:'indirectLabor',pWater:'water',pDieselQty:'dieselQty',pDieselPrice:'dieselPrice',pGen12Qty:'gen12Qty',pScm:'scm',pGas5:'gas5',pGas10Qty:'gas10Qty',pHexaneQty:'hexaneQty',pHexanePrice:'hexanePrice',pPhosQty:'phosQty',pPhosPrice:'phosPrice',pCausticQty:'causticQty',pCausticPrice:'causticPrice',pCitricQty:'citricQty',pCitricPrice:'citricPrice',pBleachQty:'bleachQty',pBleachPrice:'bleachPrice',pMealBagFactor:'mealBagFactor',pBagPrice:'bagPrice',pSellingExpenses:'sellingExpenses',pFinance:'finance',pPack1:'pack1',pPack3:'pack3',pPack5:'pack5',pPack10:'pack10',pPack25:'pack25',pPack45:'pack45'};
+function renderProductList(){const list=$('productList');$('productCount').textContent=`${state.products.length} product setup${state.products.length===1?'':'s'}`;if(!state.products.length){list.innerHTML='<div class="no-results">No product setups yet.</div>';return;}list.innerHTML=state.products.map(p=>`<button class="product-row ${p.id===editingProductId?'selected':''}" data-edit-product="${escapeHtml(p.id)}"><span class="product-avatar">${escapeHtml(p.name.slice(0,1).toUpperCase())}</span><span><strong>${escapeHtml(p.name)}</strong><small>${p.type==='soy'?'Joint-cost product':p.type==='imported'?'Imported crude oil':'Single-product costing'}</small></span><span class="row-arrow">›</span></button>`).join('');list.querySelectorAll('[data-edit-product]').forEach(b=>b.addEventListener('click',()=>editProduct(b.dataset.editProduct)));}
+function clearEditor(){editingProductId=null;$('productForm').classList.add('hidden');$('emptyEditor').classList.remove('hidden');$('editorTitle').textContent='Product configuration';renderProductList();}
+function editProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;editingProductId=id;$('emptyEditor').classList.add('hidden');$('productForm').classList.remove('hidden');$('editorTitle').textContent=p.name;$('editProductId').value=p.id;$('pName').value=p.name;$('pType').value=p.type;Object.entries(fieldMap).forEach(([id,key])=>$(id).value=p[key]??0);$('pHexaneFormula').value=p.hexaneFormula??0;$('pMealPacking').value=p.mealPacking??0;renderProductList();}
+function addProduct(){const p=defaultProduct('New product','other');state.products.push(p);persist();selectedProductId=p.id;renderProductSelect();editProduct(p.id);$('pName').focus();showToast('New product added. Enter its setup values.');}
+function saveProduct(ev){ev.preventDefault();const p=state.products.find(x=>x.id===$('editProductId').value);if(!p)return;const name=$('pName').value.trim();if(!name){$('pName').focus();return;}p.name=name;p.type=$('pType').value;Object.entries(fieldMap).forEach(([id,key])=>p[key]=n($(id).value));p.hexaneFormula=Number($('pHexaneFormula').value);p.mealPacking=Number($('pMealPacking').value);persist();selectedProductId=p.id;renderProductSelect();renderProductList();$('editorTitle').textContent=p.name;showToast('Product setup saved in this browser.');}
+function deleteProduct(){const p=state.products.find(x=>x.id===editingProductId);if(!p)return;if(!confirm(`Delete “${p.name}” from this browser? Saved calculations will remain in history.`))return;state.products=state.products.filter(x=>x.id!==p.id);if(selectedProductId===p.id)selectedProductId=state.products[0]?.id||null;persist();renderProductSelect();renderProductList();clearEditor();showToast('Product setup deleted.');}
+function page(page){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===`page-${page}`));document.querySelectorAll('.nav-item[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const names={calculator:'Cost calculator',products:'Product setup',history:'Calculation history'};$('crumbCurrent').textContent=names[page]||'Cost calculator';$('sidebar').classList.remove('open');if(page==='history')renderHistory();if(page==='products')renderProductList();window.scrollTo({top:0,behavior:'smooth'});}
+function newCalculation(){document.querySelectorAll('#page-calculator input[type=number]').forEach(x=>x.value='');$('calcDate').value=today();$('calcReference').value='';syncCalc();page('calculator');showToast('Ready for a new calculation.');}
+function saveCalculation(){const input=readInputs(),p=state.products.find(x=>x.id===input.productId);if(!p){showToast('Add or select a product setup first.');page('products');return;}if(input.qtyProcessed+input.qtySoya<=0){showToast('Enter the production quantities before saving.');$('qtyProcessed').focus();return;}if(!input.rawPrice||!input.exchangeRate||!input.oilPrice||!input.mealPrice){showToast('Complete the required price and exchange-rate inputs first.');return;}const r=calculate(input,p);const id=crypto.randomUUID();const ref=input.reference||`LC-${String(Date.now()).slice(-7)}`;const record={id,reference:ref,date:input.date,productId:p.id,productName:p.name,input,result:r,createdAt:new Date().toISOString()};state.history.unshift(record);persist();$('calcReference').value=ref;renderHistory();showToast(`Calculation ${ref} saved on this browser.`);}
+function renderHistory(query=''){$('historyCount').textContent=`${state.history.length} record${state.history.length===1?'':'s'}`;const q=query.toLowerCase();const items=state.history.filter(x=>(x.reference+' '+x.productName).toLowerCase().includes(q));if(!items.length){$('historyTable').innerHTML=`<div class="empty-history"><strong>${state.history.length?'No matching calculations':'No saved calculations yet'}</strong><p>${state.history.length?'Try a different search.':'Save a calculation to see it here.'}</p></div>`;return;}$('historyTable').innerHTML=`<div class="history-table-wrap"><table class="history-table"><thead><tr><th>REFERENCE</th><th>DATE</th><th>PRODUCT</th><th>TOTAL QTY</th><th>NET PROFIT EST.</th><th>ACTIONS</th></tr></thead><tbody>${items.map(x=>`<tr><td><strong>${escapeHtml(x.reference)}</strong><small>Saved ${new Date(x.createdAt).toLocaleString()}</small></td><td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.productName)}</td><td>${num(x.result.q,3)} MT</td><td><strong>${money(x.result.netProfit)}</strong></td><td><div class="table-actions"><button class="small-action" data-open="${escapeHtml(x.id)}">Open</button><button class="small-action delete" data-delete="${escapeHtml(x.id)}">Delete</button></div></td></tr>`).join('')}</tbody></table></div>`;$('historyTable').querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openRecord(b.dataset.open)));$('historyTable').querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>deleteRecord(b.dataset.delete)));}
+function openRecord(id){const rec=state.history.find(x=>x.id===id);if(!rec)return;selectedProductId=rec.productId;renderProductSelect();$('calcDate').value=rec.input.date;$('calcReference').value=rec.reference;$('qtyProcessed').value=rec.input.qtyProcessed;$('qtySoya').value=rec.input.qtySoya;$('rawPrice').value=rec.input.rawPrice;$('exchangeRate').value=rec.input.exchangeRate;$('oilPrice').value=rec.input.oilPrice;$('mealPrice').value=rec.input.mealPrice;$('oilMargin').value=rec.input.oilMargin;$('mealMargin').value=rec.input.mealMargin;syncCalc();page('calculator');showToast(`Opened ${rec.reference}.`);}
+function deleteRecord(id){const rec=state.history.find(x=>x.id===id);if(!rec||!confirm(`Delete saved calculation ${rec.reference}?`))return;state.history=state.history.filter(x=>x.id!==id);persist();renderHistory($('historySearch').value);showToast('Calculation removed from history.');}
+function downloadJson(filename,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
+function setTheme(theme){const allowed=['forest','ocean','plum','amber'];state.theme=allowed.includes(theme)?theme:'forest';document.body.dataset.theme=state.theme;document.querySelectorAll('[data-theme-choice]').forEach(b=>b.classList.toggle('selected',b.dataset.themeChoice===state.theme));persist();}
+function downloadBackup(){downloadJson(`lebruni-costcalculator-backup-${today()}.json`,{app:'Lebruni CostCalculator',version:1,exportedAt:new Date().toISOString(),...state});showToast('Backup downloaded.');}
+function exportCurrent(){if(!currentResult){showToast('Enter a batch quantity first.');return;}const input=readInputs(),p=state.products.find(x=>x.id===input.productId);downloadJson(`lebruni-${(input.reference||'calculation').replace(/[^a-z0-9-_]/gi,'-')}.json`,{app:'Lebruni CostCalculator',exportedAt:new Date().toISOString(),product:p,input,result:currentResult});showToast('Calculation JSON downloaded.');}
+function restoreBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data.products)||!Array.isArray(data.history))throw new Error();if(!confirm('Restore this backup? It will replace the current product setups and calculation history in this browser.'))return;state={products:data.products,history:data.history,theme:data.theme||'forest'};selectedProductId=state.products[0]?.id||null;setTheme(state.theme);persist();renderProductSelect();renderProductList();renderHistory();clearEditor();$('backupDialog').close();showToast('Backup restored.');}catch(e){showToast('That file is not a valid Lebruni backup.');}};reader.readAsText(file);}
+function bind(){
+  document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>page(b.dataset.page)));
+  $('productSelect').addEventListener('change',syncCalc);document.querySelectorAll('#page-calculator input').forEach(x=>x.addEventListener('input',syncCalc));$('newCalc').addEventListener('click',newCalculation);$('saveCalc').addEventListener('click',saveCalculation);$('productForm').addEventListener('submit',saveProduct);$('addProduct').addEventListener('click',addProduct);$('emptyAddProduct').addEventListener('click',addProduct);$('deleteProduct').addEventListener('click',deleteProduct);$('resetProduct').addEventListener('click',clearEditor);
+  $('toggleDetails').addEventListener('click',()=>{showDetails=!showDetails;$('toggleDetails').textContent=showDetails?'Hide details −':'Show details +';renderResults(currentResult);});$('printButton').addEventListener('click',()=>window.print());$('exportCurrent').addEventListener('click',exportCurrent);
+  $('backupButton').addEventListener('click',()=>$('backupDialog').showModal());$('setupBackup').addEventListener('click',()=>$('backupDialog').showModal());$('closeBackup').addEventListener('click',()=>$('backupDialog').close());$('downloadBackup').addEventListener('click',downloadBackup);$('restoreBackup').addEventListener('change',e=>restoreBackup(e.target.files[0]));$('historyExport').addEventListener('click',()=>downloadJson(`lebruni-calculations-${today()}.json`,{app:'Lebruni CostCalculator',version:1,history:state.history}));$('historySearch').addEventListener('input',e=>renderHistory(e.target.value));$('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('open'));
+  document.querySelectorAll('[data-theme-choice]').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.themeChoice)));
+  document.addEventListener('click',e=>{if(window.innerWidth<=650&&$('sidebar').classList.contains('open')&&!$('sidebar').contains(e.target)&&e.target!==$('mobileMenu'))$('sidebar').classList.remove('open');});
+}
+$('calcDate').value=today();bind();setTheme(state.theme||'forest');renderProductSelect();renderProductList();renderHistory();
