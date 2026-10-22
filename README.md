@@ -15,7 +15,7 @@ Then open `http://localhost:8000`.
 ## What is included
 
 - Batch inputs for ERP quantity, additional soya, raw-material price, exchange rate, oil/meal selling prices and profit margins.
-- Product setup for fixed rates, yields, processing inputs, overheads and packaging prices.
+- Product setup for fixed rates, yields, processing inputs, overheads, packaging prices, legacy stored values and editable item-code mean-cost rows.
 - Live landed-cost, direct-cost, yield, NRV joint-cost allocation, cost-per-MT, packaged-product, break-even, target-price and profitability summaries.
 - Save/open/delete calculations in browser history, print, per-calculation JSON export, and full JSON backup/restore.
 - Responsive desktop and mobile interface with larger text and four round top-bar themes (ocean blue is the default; forest, plum and amber are also available). Each palette colors the full interface, and the selected theme is saved locally.
@@ -28,7 +28,7 @@ When the Supabase version is started, the local data format can be imported and 
 
 ## Initial setup
 
-Two product templates are included: **Soyabean to refined oil** and **Imported crude oil to refined oil**. Their numeric fields deliberately start at zero because the source file did not include the company's actual product setup data. Edit them under **Product setup** before relying on calculation results.
+Two product templates are included: **Soyabean to refined oil** and **Imported crude oil to refined oil**. The Soyabean setup is prefilled with user-provided demo/testing values; the imported-crude template starts at zero. Three legacy quantities and the item-code mean-cost rows are retained for setup reference, but are not used by the current calculation formulas. Verify all demo figures against current business data before using results for actual decisions.
 
 ## Legacy formula notes
 
