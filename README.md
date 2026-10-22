@@ -18,7 +18,7 @@ Then open `http://localhost:8000`.
 - Product setup for fixed rates, yields, processing inputs, overheads and packaging prices.
 - Live landed-cost, direct-cost, yield, NRV joint-cost allocation, cost-per-MT, packaged-product, break-even, target-price and profitability summaries.
 - Save/open/delete calculations in browser history, print, per-calculation JSON export, and full JSON backup/restore.
-- Responsive desktop and mobile interface with larger text and four round top-bar themes (forest, ocean, plum and amber). The selected color theme is saved locally.
+- Responsive desktop and mobile interface with larger text and four round top-bar themes (ocean blue is the default; forest, plum and amber are also available). Each palette colors the full interface, and the selected theme is saved locally.
 
 ## Where data is saved for now
 
