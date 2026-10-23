@@ -7,7 +7,31 @@
   <title>Lebruni CostCalculator</title>
   <link rel="stylesheet" href="styles.css?v=8">
 </head>
-<body data-theme="ocean">
+<body data-theme="ocean" class="auth-locked">
+  <style>
+    body.auth-locked .app-shell{visibility:hidden}
+    .site-login{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#10231d,#1e6a4d);font-family:'DM Sans',Arial,sans-serif}
+    .site-login-card{width:min(100%,390px);padding:32px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+    .site-login-mark{display:grid;place-items:center;width:44px;height:44px;margin-bottom:20px;border-radius:13px;background:#d2934d;color:#10231d;font:800 24px Manrope,Arial,sans-serif}
+    .site-login h1{margin:0;color:#172a24;font:700 23px Manrope,Arial,sans-serif}
+    .site-login p{margin:8px 0 22px;color:#77837d;font-size:13px;line-height:1.5}
+    .site-login label{display:block;margin-bottom:7px;color:#52645a;font-size:11px;font-weight:700}
+    .site-login input{width:100%;height:44px;padding:0 12px;border:1px solid #dfe6e1;border-radius:8px;font:inherit;font-size:14px}
+    .site-login input:focus{outline:3px solid #e5f1e7;border-color:#70a287}
+    .site-login button{width:100%;height:44px;margin-top:13px;border:0;border-radius:8px;background:#1e6a4d;color:#fff;font:700 13px inherit;cursor:pointer}
+    .site-login-error{min-height:18px;margin-top:10px;color:#b74b46;font-size:12px}
+  </style>
+  <section class="site-login" id="siteLogin" aria-label="Site login">
+    <form class="site-login-card" id="siteLoginForm">
+      <div class="site-login-mark">L</div>
+      <h1>Lebruni CostCalculator</h1>
+      <p>Enter the password to open this calculator.</p>
+      <label for="sitePassword">Password</label>
+      <input id="sitePassword" type="password" autocomplete="current-password" required autofocus>
+      <button type="submit">Unlock calculator</button>
+      <div class="site-login-error" id="siteLoginError" role="alert" aria-live="polite"></div>
+    </form>
+  </section>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
@@ -172,5 +196,28 @@
   <dialog id="backupDialog" class="modal-dialog"><div class="dialog-head"><div><div class="eyebrow">DATA MANAGEMENT</div><h2>Backup & restore</h2></div><button class="icon-button" id="closeBackup" aria-label="Close">×</button></div><p>Download a copy of your products and saved calculations, or restore from a Lebruni JSON backup file.</p><div class="backup-actions"><button class="button button-primary" id="downloadBackup">Download backup</button><label class="button button-secondary file-button">Restore backup<input id="restoreBackup" type="file" accept="application/json,.json" hidden></label></div><div class="storage-warning"><strong>Important</strong><span>Local browser data is not synced between devices. Restoring replaces the current products and calculation history in this browser.</span></div></dialog>
   <script src="app.js?v=7"></script>
   <script src="rate.js?v=1"></script>
+  <script>
+    (function(){
+      const key='lebruni_calculator_access';
+      const gate=document.getElementById('siteLogin');
+      const form=document.getElementById('siteLoginForm');
+      const input=document.getElementById('sitePassword');
+      const error=document.getElementById('siteLoginError');
+      function unlock(){document.body.classList.remove('auth-locked');gate.hidden=true;}
+      if(sessionStorage.getItem(key)==='granted')unlock();
+      form.addEventListener('submit',function(event){
+        event.preventDefault();
+        if(input.value==='Lebruni12345@'){
+          sessionStorage.setItem(key,'granted');
+          error.textContent='';
+          unlock();
+        }else{
+          error.textContent='Incorrect password. Try again.';
+          input.value='';
+          input.focus();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
