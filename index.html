@@ -93,8 +93,6 @@
               <div class="form-grid two">
                 <label class="field"><span>Refined oil selling price <em>*</em></span><div class="input-unit"><span class="unit-prefix">₦</span><input id="oilPrice" type="number" min="0" step="0.01" placeholder="0.00"><small>/ MT</small></div></label>
                 <label class="field"><span>Soya meal selling price <em>*</em></span><div class="input-unit"><span class="unit-prefix">₦</span><input id="mealPrice" type="number" min="0" step="0.01" placeholder="0.00"><small>/ MT</small></div></label>
-                <label class="field"><span>Refined oil profit margin</span><div class="input-unit"><input id="oilMargin" type="number" min="0" step="0.01" placeholder="0.00"><small>%</small></div></label>
-                <label class="field"><span>Soya meal profit margin</span><div class="input-unit"><input id="mealMargin" type="number" min="0" step="0.01" placeholder="0.00"><small>%</small></div></label>
               </div>
               <div class="live-total"><div class="total-icon">∑</div><div><span>TOTAL QUANTITY FOR THIS BATCH</span><small>ERP processed + additional soya</small></div><strong id="totalQtyDisplay">0.000 <small>MT</small></strong></div>
             </section>
@@ -112,7 +110,14 @@
               <div class="metric"><span>Refined oil yield</span><strong id="summaryOilYield">0.000 MT</strong></div>
               <div class="metric"><span>Soya meal yield</span><strong id="summaryMealYield">0.000 MT</strong></div>
               <div class="summary-divider"></div>
+              <div class="metric"><span>Raw soya cost / MT</span><strong id="summaryRawCost">₦0.00</strong></div>
+              <div class="metric"><span>Refined oil cost / MT</span><strong id="summaryOilCost">₦0.00</strong></div>
+              <div class="metric"><span>Soya meal cost / MT</span><strong id="summaryMealCost">₦0.00</strong></div>
+              <div class="summary-divider"></div>
               <div class="metric metric-highlight"><span>Est. net profit</span><strong id="summaryNetProfit">₦0.00</strong></div>
+              <div class="summary-divider"></div>
+              <div class="metric"><span><strong>Finished-goods cost</strong> · per pack</span></div>
+              <div id="skuDockContent"></div>
               <div class="summary-foot">Live estimate · before saving</div>
             </section>
             <section class="panel quick-card"><div class="panel-heading"><div><h2>Quick actions</h2><p>Manage this calculator.</p></div></div><button class="quick-action" id="printButton"><span>▤</span><div><strong>Print calculation</strong><small>Open a print-ready report</small></div><b>›</b></button><button class="quick-action" id="exportCurrent"><span>⇩</span><div><strong>Export this calculation</strong><small>Download a JSON copy</small></div><b>›</b></button><button class="quick-action" data-page="products"><span>⚙</span><div><strong>Manage product setup</strong><small>Edit fixed costs and yields</small></div><b>›</b></button></section>
@@ -127,12 +132,12 @@
           <input id="editProductId" type="hidden">
           <div class="section-label">PRODUCT IDENTITY</div><div class="form-grid"><label class="field field-wide"><span>Product name <em>*</em></span><input id="pName" type="text" required placeholder="e.g. Soyabean to refined oil"></label><label class="field field-wide"><span>Calculation type</span><select id="pType"><option value="soy">Soybean to refined oil (editable joint-cost allocation)</option><option value="imported">Imported crude oil to refined oil</option><option value="other">Other product (single-product costing)</option></select><small class="field-hint">The supplied code applies special joint-cost allocation to “Soyabean to refined oil”.</small></label></div>
           <div class="section-label">TAXES, CLEARING & YIELDS</div><div class="form-grid two">
-            <label class="field"><span>Import duty</span><div class="input-unit"><input id="pImportDuty" type="number" step="0.0001" min="0"><small>%</small></div></label>
-            <label class="field"><span>VAT on import duty</span><div class="input-unit"><input id="pVat" type="number" step="0.0001" min="0"><small>%</small></div></label>
-            <label class="field"><span>ETLS</span><div class="input-unit"><input id="pEtls" type="number" step="0.0001" min="0"><small>% of CIF</small></div></label>
-            <label class="field"><span>CIS / terminal rate</span><div class="input-unit"><input id="pCis" type="number" step="0.0001" min="0"><small>%</small></div><small class="field-hint">The legacy calculation applies this rate to CIS and clearing/terminal.</small></label>
-            <label class="field"><span>Clearing charge per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pClearing" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
-            <label class="field"><span>Local transport per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pTransport" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
+            <label class="field import-only"><span>Import duty</span><div class="input-unit"><input id="pImportDuty" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field import-only"><span>VAT on import duty</span><div class="input-unit"><input id="pVat" type="number" step="0.0001" min="0"><small>%</small></div></label>
+            <label class="field import-only"><span>ETLS</span><div class="input-unit"><input id="pEtls" type="number" step="0.0001" min="0"><small>% of CIF</small></div></label>
+            <label class="field import-only"><span>CIS / terminal rate</span><div class="input-unit"><input id="pCis" type="number" step="0.0001" min="0"><small>%</small></div><small class="field-hint">The legacy calculation applies this rate to CIS and clearing/terminal.</small></label>
+            <label class="field import-only"><span>Clearing charge per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pClearing" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
+            <label class="field import-only"><span>Local transport per container</span><div class="input-unit"><span class="unit-prefix">₦</span><input id="pTransport" type="number" step="0.01" min="0"><small>/ 22 MT</small></div></label>
             <label class="field"><span>Refined oil yield</span><div class="input-unit"><input id="pOilYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
             <label class="field"><span>Soya meal yield</span><div class="input-unit"><input id="pMealYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
             <label class="field"><span>Waste / process loss</span><div class="input-unit"><input id="pWasteYield" type="number" step="0.0001" min="0"><small>%</small></div></label>
